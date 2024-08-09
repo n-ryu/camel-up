@@ -9,13 +9,13 @@ const diceValues = { camel: [1, 2, 3], crazy: [1, 2, 3, -1, -2, -3] };
 export class Game {
   camels: Map<string, Stack>;
   tracks: Stack[];
-  spectators: (1 | -1 | 0)[];
+  traps: (1 | -1 | 0)[];
   usedDices: string[];
 
   constructor(game?: Game) {
     if (game) {
       this.tracks = game.tracks.map((track) => track.cloneFromBottom());
-      this.spectators = [...game.spectators];
+      this.traps = [...game.traps];
       this.usedDices = [...game.usedDices];
       this.camels = new Map();
       this.tracks.forEach((track) => {
@@ -28,7 +28,7 @@ export class Game {
     }
 
     this.tracks = new Array(16).fill(0).map((_, i) => new Stack(`${i}`));
-    this.spectators = new Array(16).fill(0);
+    this.traps = new Array(16).fill(0);
     this.usedDices = [];
     this.camels = new Map(colors.map((color) => [color, new Stack(color)]));
   }
@@ -39,7 +39,7 @@ export class Game {
 
   resetLeg() {
     this.usedDices = [];
-    this.spectators = new Array(16).fill(0);
+    this.traps = new Array(16).fill(0);
   }
 
   setCamel(color: string, trackIndex: number) {
@@ -68,15 +68,14 @@ export class Game {
     camel.bottom.top = camel;
   }
 
-  setSpectator(type: 1 | -1 | 0, trackIndex: number) {
+  setTrap(type: 1 | -1 | 0, trackIndex: number) {
     [trackIndex - 1, trackIndex, trackIndex + 1]
-      .filter((i) => i >= 0 && i < this.spectators.length)
+      .filter((i) => i >= 0 && i < this.traps.length)
       .forEach((i) => {
-        if (this.spectators[i])
-          throw new Error("You cannot place spectator there!");
+        if (this.traps[i]) throw new Error("You cannot place spectator there!");
       });
 
-    this.spectators[trackIndex] = type;
+    this.traps[trackIndex] = type;
   }
 
   initGame(initialStates: [string, number][]) {
@@ -121,10 +120,15 @@ export class Game {
 
     const position = Number(camel.bottomMost.name);
 
-    const spectator = this.spectators[position + delta] ?? 0;
+    const spectator = this.traps[position + delta] ?? 0;
 
-    if (spectator >= 0) this.setCamel(color, position + delta + spectator);
-    else this.setCamelUnder(color, position + delta + spectator);
+    if (spectator >= 0)
+      this.setCamel(color, position + delta + spectator * Math.sign(delta));
+    else
+      this.setCamelUnder(
+        color,
+        position + delta + spectator * Math.sign(delta)
+      );
 
     this.usedDices.push(dice === "w" || dice === "k" ? "wk" : dice);
   }
@@ -192,27 +196,10 @@ export class Game {
     return probabilities;
   }
 
-  printGame() {
-    this.tracks.forEach((track, i) => {
-      console.log(this.spectators[i], track.toArray());
+  getTrackInfo() {
+    return this.tracks.map((track, i) => {
+      const [name, ...camels] = track.toArray();
+      return { name, camels, trap: this.traps[i] };
     });
   }
 }
-
-const game = new Game();
-
-game.initGame([
-  ["r", 1],
-  ["b", 2],
-  ["g", 2],
-  ["y", 2],
-  ["p", 1],
-  ["w", 15],
-  ["k", 15],
-]);
-
-game.setSpectator(-1, 5);
-
-game.printGame();
-
-console.log(game.predictRank());
