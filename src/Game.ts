@@ -4,7 +4,7 @@ const camelKeys = ["r", "y", "g", "b", "p"];
 const crazyKeys = ["w", "k"];
 const colors = [...camelKeys, ...crazyKeys];
 const dicePool = ["r", "y", "g", "b", "p", "wk"];
-const diceValues = { camel: [1, 2, 3, 1, 2, 3], crazy: [1, 2, 3, -1, -2, -3] };
+const diceValues = { camel: [1, 2, 3], crazy: [1, 2, 3, -1, -2, -3] };
 
 export class Game {
   camels: Map<string, Stack>;
@@ -151,7 +151,9 @@ export class Game {
         return diceValues.camel.flatMap((number) => {
           const game = this.clone();
           game.roleDice(dice, number);
-          return game.simulateLeg();
+
+          const result = game.simulateLeg();
+          return [...result, ...result];
         });
       }
     });
@@ -211,7 +213,6 @@ game.initGame([
 
 game.setSpectator(-1, 5);
 
-game.roleDice("r", 3);
 game.printGame();
 
 console.log(game.predictRank());
