@@ -37,6 +37,11 @@ export class Game {
     return new Game(this);
   }
 
+  resetLeg() {
+    this.usedDices = [];
+    this.spectators = new Array(16).fill(0);
+  }
+
   setCamel(color: string, trackIndex: number) {
     const camel = this.camels.get(color);
     if (!camel) throw new Error("No such a camel exists!");
