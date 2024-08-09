@@ -19,8 +19,25 @@ export class Stack {
     return [this.name, ...(this.top?.toArray() ?? [])];
   }
 
-  iterate(callback: (name: string) => void) {
-    callback(this.name);
-    this.bottom?.iterate(callback);
+  iterate(callback: (stack: Stack) => void, toTop?: boolean) {
+    callback(this);
+    if (!toTop) this.bottom?.iterate(callback);
+    else this.top?.iterate(callback, toTop);
+  }
+
+  cloneFromBottom() {
+    const arr: string[] = [];
+    this.topMost.iterate(({ name }) => {
+      arr.push(name);
+    });
+    arr.reverse();
+
+    const stacks = arr.map((name) => new Stack(name));
+    stacks.forEach((stack, i, arr) => {
+      if (i - 1 >= 0) stack.bottom = arr[i - 1];
+      if (i + 1 < arr.length) stack.top = arr[i + 1];
+    });
+
+    return stacks[0];
   }
 }

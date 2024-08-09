@@ -4,18 +4,37 @@ const camelKeys = ["r", "y", "g", "b", "p"];
 const crazyKeys = ["w", "k"];
 const colors = [...camelKeys, ...crazyKeys];
 const dicePool = ["r", "y", "g", "b", "p", "wk"];
+const diceValues = { camel: [1, 2, 3, 1, 2, 3], crazy: [1, 2, 3, -1, -2, -3] };
 
-class Game {
+export class Game {
   camels: Map<string, Stack>;
   tracks: Stack[];
   spectators: (1 | -1 | 0)[];
-  usedDices: ({ color: string; number: number } | null)[];
+  usedDices: string[];
 
-  constructor() {
+  constructor(game?: Game) {
+    if (game) {
+      this.tracks = game.tracks.map((track) => track.cloneFromBottom());
+      this.spectators = [...game.spectators];
+      this.usedDices = [...game.usedDices];
+      this.camels = new Map();
+      this.tracks.forEach((track) => {
+        track.iterate((stack) => {
+          if (colors.includes(stack.name)) this.camels.set(stack.name, stack);
+        }, true);
+      });
+
+      return this;
+    }
+
     this.tracks = new Array(16).fill(0).map((_, i) => new Stack(`${i}`));
     this.spectators = new Array(16).fill(0);
-    this.usedDices = new Array(5).fill(0).map(() => null);
+    this.usedDices = [];
     this.camels = new Map(colors.map((color) => [color, new Stack(color)]));
+  }
+
+  clone() {
+    return new Game(this);
   }
 
   setCamel(color: string, trackIndex: number) {
@@ -36,8 +55,10 @@ class Game {
 
     camel.bottom = this.tracks[trackIndex];
     if (camel.bottom.top) {
-      camel.topMost.top = camel.bottom.top;
-      camel.bottom.top.bottom = camel.topMost;
+      const currentTopMost = camel.topMost;
+
+      currentTopMost.top = camel.bottom.top;
+      currentTopMost.top.bottom = currentTopMost;
     }
     camel.bottom.top = camel;
   }
@@ -61,7 +82,7 @@ class Game {
     let rank: string[] = [];
     for (let i = this.tracks.length - 1; i >= 0; i--) {
       const track = this.tracks[i];
-      track.topMost.iterate((name) => {
+      track.topMost.iterate(({ name }) => {
         if (camelKeys.includes(name)) rank.push(name);
       });
     }
@@ -69,6 +90,9 @@ class Game {
   }
 
   roleDice(dice: string, number: number) {
+    if (this.usedDices.some((usedDice) => usedDice.includes(dice)))
+      throw new Error("You cannot role one dice twice in a single leg");
+
     const decide = (): [string, number] => {
       if (dice === "w" || dice === "k") {
         const white = this.camels.get("w") as Stack;
@@ -92,19 +116,79 @@ class Game {
 
     const position = Number(camel.bottomMost.name);
 
-    const spectator = this.spectators[position + delta];
+    const spectator = this.spectators[position + delta] ?? 0;
 
-    this.setCamel(color, position + delta + spectator * Math.sign(delta));
+    if (spectator >= 0) this.setCamel(color, position + delta + spectator);
+    else this.setCamelUnder(color, position + delta + spectator);
+
+    this.usedDices.push(dice === "w" || dice === "k" ? "wk" : dice);
   }
 
-  clone() {}
+  simulateLeg() {
+    if (this.usedDices.length >= 5) return [this.getRank()];
 
-  simulateDice() {}
+    const diceCandidate = dicePool.filter(
+      (dice) => !this.usedDices.includes(dice)
+    );
+
+    const ranks: string[][] = diceCandidate.flatMap((dice) => {
+      if (dice === "wk") {
+        return diceValues.crazy.flatMap((number) => {
+          const game = this.clone();
+          if (number > 0) {
+            game.roleDice("w", number);
+          } else {
+            game.roleDice("k", -number);
+          }
+          return game.simulateLeg();
+        });
+      } else {
+        return diceValues.camel.flatMap((number) => {
+          const game = this.clone();
+          game.roleDice(dice, number);
+          return game.simulateLeg();
+        });
+      }
+    });
+
+    return ranks;
+  }
+
+  predictRank() {
+    const futures = this.simulateLeg();
+    const colorMap = { r: 0, g: 1, b: 2, y: 3, p: 4 };
+    const inverseMap = ["r", "g", "b", "y", "p"];
+
+    const cases = futures.reduce<number[][]>(
+      (acc, future) => {
+        future.forEach((color, i) => {
+          acc[i][colorMap[color as "r" | "g" | "b" | "y" | "p"]]++;
+        });
+        return acc;
+      },
+      [
+        [0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0],
+      ]
+    );
+
+    const probabilities = cases.map((byColors) =>
+      byColors.map((number, i) => [
+        inverseMap[i],
+        ((number / futures.length) * 100).toFixed(2) + "%",
+      ])
+    );
+
+    return probabilities;
+  }
 
   printGame() {
-    this.tracks.forEach((track, i) =>
-      console.log(this.spectators[i], track.toArray())
-    );
+    this.tracks.forEach((track, i) => {
+      console.log(this.spectators[i], track.toArray());
+    });
   }
 }
 
@@ -120,9 +204,9 @@ game.initGame([
   ["k", 15],
 ]);
 
-game.setSpectator(-1, 10);
-game.roleDice("g", 3);
-game.roleDice("w", 3);
-game.roleDice("k", 2);
+game.setSpectator(-1, 5);
 
+game.roleDice("r", 3);
 game.printGame();
+
+console.log(game.predictRank());
