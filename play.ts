@@ -187,6 +187,38 @@ const role = async () => {
   }
 };
 
+const roleByRandom = () => {
+  const dice =
+    game.availableDices[Math.floor(Math.random() * game.availableDices.length)];
+
+  const camel = dice === "wk" ? (Math.random() >= 0.5 ? "w" : "k") : dice;
+
+  const number = Math.floor(Math.random() * 3) + 1;
+
+  console.log(
+    chalk.bold(
+      `\n\nDice roled! ${coloringMap[camel as keyof typeof coloringMap](
+        camel + number
+      )}`
+    )
+  );
+
+  const result = game.roleDice(camel, number);
+
+  print();
+
+  if (game.usedDices.length >= 5) {
+    console.log("round ended! resetting traps and dices...");
+    game.resetRound();
+
+    print();
+  }
+
+  if (result) {
+    return result;
+  }
+};
+
 const trap = async () => {
   const value: 1 | -1 | 0 = await select({
     message: "which type of trap you to place?",
@@ -225,11 +257,20 @@ const trap = async () => {
 const proceedTurn = async () => {
   const action = await select({
     message: "which action you want to play?",
-    choices: [{ value: "role" }, { value: "trap" }, { value: "set" }],
+    choices: [
+      { value: "role (random)" },
+      { value: "role" },
+      { value: "trap" },
+      { value: "set" },
+    ],
   });
 
   if (action === "role") {
     const result = await role();
+    if (result) return result;
+  }
+  if (action === "role (random)") {
+    const result = roleByRandom();
     if (result) return result;
   }
   if (action === "trap") await trap();
@@ -245,7 +286,14 @@ const main = async () => {
 
   while (!(await proceedTurn())) {}
 
-  console.log(chalk.bold.underline("\n\n\nGame ended!"));
+  const rank = game
+    .getRank()
+    .map((color) => coloringMap[color as keyof typeof coloringMap](color))
+    .join(" > ");
+  console.log(chalk.bold.white("\n\n\n\n============================"));
+  console.log(chalk.bold.white("#        GAME ENDED!       #"));
+  console.log(chalk.bold.white(`#     ${rank}    #`));
+  console.log(chalk.bold.white("============================\n"));
   print();
 };
 
