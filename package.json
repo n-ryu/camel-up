@@ -14,6 +14,6 @@
     "typescript": "^5.5.4"
   },
   "dependencies": {
-    "inquirer": "^10.1.8"
+    "@inquirer/prompts": "^5.3.8"
   }
 }

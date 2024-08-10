@@ -3,7 +3,7 @@ import { Stack } from "./Stack";
 const camelKeys = ["r", "y", "g", "b", "p"];
 const crazyKeys = ["w", "k"];
 const colors = [...camelKeys, ...crazyKeys];
-const dicePool = ["r", "y", "g", "b", "p", "wk"];
+export const dicePool = ["r", "y", "g", "b", "p", "wk"];
 const diceValues = { camel: [1, 2, 3], crazy: [1, 2, 3, -1, -2, -3] };
 
 export class Game {
@@ -37,12 +37,16 @@ export class Game {
     return new Game(this);
   }
 
-  resetLeg() {
+  resetRound() {
     this.usedDices = [];
     this.traps = new Array(16).fill(0);
   }
 
-  setCamel(color: string, trackIndex: number) {
+  get availableDices() {
+    return dicePool.filter((dice) => !this.usedDices.includes(dice));
+  }
+
+  private setCamel(color: string, trackIndex: number) {
     const camel = this.camels.get(color);
     if (!camel) throw new Error("No such a camel exists!");
 
@@ -52,7 +56,7 @@ export class Game {
     camel.bottom.top = camel;
   }
 
-  setCamelUnder(color: string, trackIndex: number) {
+  private setCamelUnder(color: string, trackIndex: number) {
     const camel = this.camels.get(color);
     if (!camel) throw new Error("No such a camel exists!");
 
@@ -95,7 +99,7 @@ export class Game {
 
   roleDice(dice: string, number: number) {
     if (this.usedDices.some((usedDice) => usedDice.includes(dice)))
-      throw new Error("You cannot role one dice twice in a single leg");
+      throw new Error("You cannot role the same dice twice in a single round");
 
     const decide = (): [string, number] => {
       if (dice === "w" || dice === "k") {
@@ -133,7 +137,7 @@ export class Game {
     this.usedDices.push(dice === "w" || dice === "k" ? "wk" : dice);
   }
 
-  simulateLeg() {
+  simulateRound() {
     if (this.usedDices.length >= 5) return [this.getRank()];
 
     const diceCandidate = dicePool.filter(
@@ -149,14 +153,14 @@ export class Game {
           } else {
             game.roleDice("k", -number);
           }
-          return game.simulateLeg();
+          return game.simulateRound();
         });
       } else {
         return diceValues.camel.flatMap((number) => {
           const game = this.clone();
           game.roleDice(dice, number);
 
-          const result = game.simulateLeg();
+          const result = game.simulateRound();
           return [...result, ...result];
         });
       }
@@ -166,7 +170,7 @@ export class Game {
   }
 
   predictRank() {
-    const futures = this.simulateLeg();
+    const futures = this.simulateRound();
     const colorMap = { r: 0, g: 1, b: 2, y: 3, p: 4 };
     const inverseMap = ["r", "g", "b", "y", "p"];
 
