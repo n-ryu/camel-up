@@ -5,6 +5,7 @@ const crazyKeys = ["w", "k"];
 export const colors = [...camelKeys, ...crazyKeys];
 export const dicePool = ["r", "y", "g", "b", "p", "wk"];
 const diceValues = { camel: [1, 2, 3], crazy: [1, 2, 3, -1, -2, -3] };
+const caseCounts = [1, 12, 216, 5184, 155520, 5598720];
 
 export class Game {
   camels: Map<string, Stack>;
@@ -163,10 +164,20 @@ export class Game {
           const game = this.clone();
           if (number > 0) {
             const result = game.roleDice("w", number);
-            if (result) return [result];
+            if (result)
+              return new Array(
+                caseCounts[caseCounts.length - this.usedDices.length - 2]
+              )
+                .fill(0)
+                .map(() => [...result]);
           } else {
             const result = game.roleDice("k", -number);
-            if (result) return [result];
+            if (result)
+              return new Array(
+                caseCounts[caseCounts.length - this.usedDices.length - 2]
+              )
+                .fill(0)
+                .map(() => [...result]);
           }
           return game.simulateRound();
         });
@@ -174,19 +185,25 @@ export class Game {
         return diceValues.camel.flatMap((number) => {
           const game = this.clone();
           const roleResult = game.roleDice(dice, number);
-          if (roleResult) return [roleResult, roleResult];
+          if (roleResult) {
+            return new Array(
+              caseCounts[caseCounts.length - this.usedDices.length - 2] * 2
+            )
+              .fill(0)
+              .map(() => [...roleResult]);
+          }
 
           const result = game.simulateRound();
           return [...result, ...result];
         });
       }
     });
-
     return ranks;
   }
 
   predictRank() {
     const futures = this.simulateRound();
+    console.log(futures.length);
     const colorMap = { r: 0, g: 1, b: 2, y: 3, p: 4 };
     const inverseMap = ["r", "g", "b", "y", "p"];
 
