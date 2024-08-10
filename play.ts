@@ -237,6 +237,10 @@ const proceedTurn = async () => {
 };
 
 const main = async () => {
+  console.log(chalk.bold.white("============================="));
+  console.log(chalk.bold.white("#  WELCOM TO THE CAMEL-UP!  #"));
+  console.log(chalk.bold.white("=============================\n"));
+
   await initiate();
 
   while (!(await proceedTurn())) {}
