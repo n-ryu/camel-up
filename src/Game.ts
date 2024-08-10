@@ -2,7 +2,7 @@ import { Stack } from "./Stack";
 
 const camelKeys = ["r", "y", "g", "b", "p"];
 const crazyKeys = ["w", "k"];
-const colors = [...camelKeys, ...crazyKeys];
+export const colors = [...camelKeys, ...crazyKeys];
 export const dicePool = ["r", "y", "g", "b", "p", "wk"];
 const diceValues = { camel: [1, 2, 3], crazy: [1, 2, 3, -1, -2, -3] };
 
@@ -46,7 +46,7 @@ export class Game {
     return dicePool.filter((dice) => !this.usedDices.includes(dice));
   }
 
-  private setCamel(color: string, trackIndex: number) {
+  setCamel(color: string, trackIndex: number) {
     const camel = this.camels.get(color);
     if (!camel) throw new Error("No such a camel exists!");
 
@@ -73,11 +73,13 @@ export class Game {
   }
 
   setTrap(type: 1 | -1 | 0, trackIndex: number) {
-    [trackIndex - 1, trackIndex, trackIndex + 1]
-      .filter((i) => i >= 0 && i < this.traps.length)
-      .forEach((i) => {
-        if (this.traps[i]) throw new Error("You cannot place spectator there!");
-      });
+    if (type !== 0)
+      [trackIndex - 1, trackIndex, trackIndex + 1]
+        .filter((i) => i >= 0 && i < this.traps.length)
+        .forEach((i) => {
+          if (this.traps[i])
+            throw new Error("You cannot place spectator there!");
+        });
 
     this.traps[trackIndex] = type;
   }
@@ -126,13 +128,24 @@ export class Game {
 
     const spectator = this.traps[position + delta] ?? 0;
 
-    if (spectator >= 0)
-      this.setCamel(color, position + delta + spectator * Math.sign(delta));
-    else
-      this.setCamelUnder(
-        color,
-        position + delta + spectator * Math.sign(delta)
-      );
+    const nextPosition = position + delta + spectator * Math.sign(delta);
+
+    if (dice === "w" || dice === "k") {
+      if (nextPosition < 0) {
+        this.tracks = [new Stack("-1"), ...this.tracks];
+        this.setCamel(dice, 0);
+        return this.getRank();
+      }
+    } else {
+      if (nextPosition >= this.tracks.length) {
+        this.tracks = [...this.tracks, new Stack("16")];
+        this.setCamel(dice, 16);
+        return this.getRank();
+      }
+    }
+
+    if (spectator >= 0) this.setCamel(color, nextPosition);
+    else this.setCamelUnder(color, nextPosition);
 
     this.usedDices.push(dice === "w" || dice === "k" ? "wk" : dice);
   }
@@ -149,16 +162,19 @@ export class Game {
         return diceValues.crazy.flatMap((number) => {
           const game = this.clone();
           if (number > 0) {
-            game.roleDice("w", number);
+            const result = game.roleDice("w", number);
+            if (result) return [result];
           } else {
-            game.roleDice("k", -number);
+            const result = game.roleDice("k", -number);
+            if (result) return [result];
           }
           return game.simulateRound();
         });
       } else {
         return diceValues.camel.flatMap((number) => {
           const game = this.clone();
-          game.roleDice(dice, number);
+          const roleResult = game.roleDice(dice, number);
+          if (roleResult) return [roleResult, roleResult];
 
           const result = game.simulateRound();
           return [...result, ...result];
@@ -191,9 +207,9 @@ export class Game {
     );
 
     const probabilities = cases.map((byColors) =>
-      byColors.map((number, i) => [
+      byColors.map<[string, number]>((number, i) => [
         inverseMap[i],
-        ((number / futures.length) * 100).toFixed(2) + "%",
+        (number / futures.length) * 100,
       ])
     );
 

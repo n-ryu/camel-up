@@ -1,7 +1,112 @@
 import { select } from "@inquirer/prompts";
-import { dicePool, Game } from "./src/Game";
+import { colors, dicePool, Game } from "./src/Game";
+import chalk from "chalk";
 
 const game = new Game();
+
+const coloringMap = {
+  r: chalk.red,
+  y: chalk.yellow,
+  g: chalk.green,
+  b: chalk.blue,
+  p: chalk.magenta,
+  w: chalk.white,
+  k: chalk.black,
+};
+
+const camelMap = {
+  r: chalk.red("r>"),
+  y: chalk.yellow("y>"),
+  g: chalk.green("g>"),
+  b: chalk.blue("b>"),
+  p: chalk.magenta("p>"),
+  w: chalk.white("<w"),
+  k: chalk.black("<k"),
+};
+
+const print = (noPrediction?: boolean) => {
+  const info = game.getTrackInfo();
+
+  const trapLayer = info
+    .map(({ trap }) =>
+      trap === 0
+        ? "  "
+        : trap === 1
+        ? chalk.bgGreen.black("+1")
+        : chalk.bgRed.black("-1")
+    )
+    .join("|");
+  const trackLayer = info.map(({ name }) => `0${name}`.slice(-2)).join("|");
+  const camelLayer = [0, 1, 2, 3, 4]
+    .map(
+      (layer) =>
+        " " +
+        info
+          .map(({ camels }) =>
+            camels[layer]
+              ? camelMap[camels[layer] as keyof typeof camelMap]
+              : "  "
+          )
+          .join(" ") +
+        " "
+    )
+    .reverse()
+    .join("\n");
+
+  const rankLayer =
+    "Rank: " +
+    game
+      .getRank()
+      .map((color) => coloringMap[color as keyof typeof coloringMap](color))
+      .join(" > ");
+
+  console.log(camelLayer);
+  console.log("|" + trackLayer + "|");
+  console.log("|" + trapLayer + "|");
+  console.log(rankLayer);
+
+  if (!noPrediction) {
+    const [first, second] = game.predictRank().map((ranks) => {
+      const sortedRanks = [...ranks].sort((a, b) => b[1] - a[1]);
+      return sortedRanks
+        .map(([color, probability]) =>
+          coloringMap[color as keyof typeof coloringMap](
+            `${color}: ${probability.toFixed(2)}%`
+          )
+        )
+        .join(", ");
+    });
+    const predictionLayer = `% for 1st: ${first}\n% for 2nd: ${second}`;
+
+    console.log(predictionLayer);
+  }
+};
+
+const set = async (noPrediction?: boolean) => {
+  const camel = await select({
+    message: "which camel you want to set?",
+    choices: colors.map((camel) => ({
+      value: camel,
+    })),
+  });
+
+  const track = await select({
+    message: "to where you want to place a camel?",
+    choices: new Array(16).fill(0).map((_, i) => ({
+      value: i,
+    })),
+  });
+
+  game.setCamel(camel, track);
+
+  print(noPrediction);
+};
+
+const manualInit = async () => {
+  while ([...game.camels].some(([_, { bottom }]) => !bottom)) {
+    await set(true);
+  }
+};
 
 const initiate = async () => {
   const initMethod = await select({
@@ -32,10 +137,10 @@ const initiate = async () => {
 
     game.initGame([...order]);
   } else if (initMethod === "manual") {
-    throw new Error("not implemented");
+    await manualInit();
   }
 
-  console.log(game.getTrackInfo());
+  print();
 };
 
 const role = async () => {
@@ -66,52 +171,78 @@ const role = async () => {
           })),
   })) as [string, number];
 
-  game.roleDice(...roleValue);
-  console.log(game.getTrackInfo());
+  const result = game.roleDice(...roleValue);
+
+  print();
 
   if (game.usedDices.length >= 5) {
     console.log("round ended! resetting traps and dices...");
     game.resetRound();
 
-    console.log(game.getTrackInfo());
+    print();
+  }
+
+  if (result) {
+    return result;
   }
 };
 
 const trap = async () => {
-  const track = await select({
-    message: "to where you want to place a trap?",
-    choices: new Array(16).fill(0).map((_, i) => ({
-      value: i,
-    })),
+  const value: 1 | -1 | 0 = await select({
+    message: "which type of trap you to place?",
+    choices: [
+      { value: +1 },
+      {
+        value: 0,
+        disabled: game.traps.filter((trap) => trap !== 0).length === 0,
+      },
+      { value: -1 },
+    ],
   });
 
-  const value: 1 | -1 = await select({
-    message: "which type of trap you to place?",
-    choices: [{ value: +1 }, { value: -1 }],
+  const track = await select({
+    message: "to where you want to place a trap?",
+    choices: new Array(16)
+      .fill(0)
+      .map((_, i) => ({
+        value: i,
+        disabled: Boolean(
+          value !== 0
+            ? game.tracks[i].top !== null ||
+                game.traps[i] ||
+                game.traps[i - 1] ||
+                game.traps[i + 1]
+            : !game.traps[i]
+        ),
+      }))
+      .slice(1),
   });
 
   game.setTrap(value, track);
-  console.log(game.getTrackInfo());
+  print();
 };
 
 const proceedTurn = async () => {
   const action = await select({
     message: "which action you want to play?",
-    choices: [{ value: "role" }, { value: "trap" }],
+    choices: [{ value: "role" }, { value: "trap" }, { value: "set" }],
   });
 
-  if (action === "role") await role();
+  if (action === "role") {
+    const result = await role();
+    if (result) return result;
+  }
   if (action === "trap") await trap();
-
-  console.log(game.predictRank());
+  if (action === "set") await set();
 };
 
 const main = async () => {
   await initiate();
 
-  while (1) {
-    await proceedTurn();
-  }
+  while (!(await proceedTurn())) {}
+
+  console.log(chalk.bold.underline("\n\n\nGame ended!"));
+  print();
 };
 
 main();
