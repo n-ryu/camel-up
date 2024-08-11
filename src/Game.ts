@@ -203,7 +203,6 @@ export class Game {
 
   predictRank() {
     const futures = this.simulateRound();
-    console.log(futures.length);
     const colorMap = { r: 0, g: 1, b: 2, y: 3, p: 4 };
     const inverseMap = ["r", "g", "b", "y", "p"];
 
