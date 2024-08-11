@@ -5,6 +5,7 @@
 ## Quick Start
 
 ```zsh
+pnpm i
 pnpm ts-node ./play.ts
 ```
 
