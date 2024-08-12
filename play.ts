@@ -254,6 +254,76 @@ const trap = async () => {
   print();
 };
 
+const predictBet = () => {
+  const [first, second] = game.predictRank();
+  const values = [5, 3, 2];
+
+  const expectedValues = first.map(([color, prob], i) =>
+    values
+      .map((value) =>
+        coloringMap[color as keyof typeof coloringMap](
+          `${color}*${value}: ${
+            (value * prob + 1 * second[i][1] - (prob + second[i][1])) / 100
+          }`
+        )
+      )
+      .join(", ")
+  );
+  console.log(expectedValues.join("\n"));
+};
+
+const predictTrap = async () => {
+  const value: 1 | -1 | 0 = await select({
+    message: "which type of trap you to place?",
+    choices: [
+      { value: +1 },
+      {
+        value: 0,
+        disabled: game.traps.filter((trap) => trap !== 0).length === 0,
+      },
+      { value: -1 },
+    ],
+  });
+
+  const track = await select({
+    message: "to where you want to place a trap?",
+    choices: new Array(16)
+      .fill(0)
+      .map((_, i) => ({
+        value: i,
+        disabled: Boolean(
+          value !== 0
+            ? game.tracks[i].top !== null ||
+                game.traps[i] ||
+                game.traps[i - 1] ||
+                game.traps[i + 1]
+            : !game.traps[i]
+        ),
+      }))
+      .slice(1),
+  });
+
+  const clonedGame = game.clone();
+  clonedGame.setTrap(value, track);
+
+  const original = game.predictRank();
+  const [first, second] = clonedGame.predictRank().map((ranks, i) => {
+    const sortedRanks = [...ranks].sort((a, b) => b[1] - a[1]);
+    return sortedRanks
+      .map(([color, probability]) =>
+        coloringMap[color as keyof typeof coloringMap](
+          `${color}: ${original[i]
+            .find(([c]) => c === color)?.[1]
+            .toFixed(2)} -> ${chalk.bold(probability.toFixed(2))}%`
+        )
+      )
+      .join(", ");
+  });
+  const predictionLayer = `% delta for 1st: ${first}\n% delta for 2nd: ${second}`;
+
+  console.log(predictionLayer);
+};
+
 const proceedTurn = async () => {
   const action = await select({
     message: "which action you want to play?",
@@ -262,6 +332,8 @@ const proceedTurn = async () => {
       { value: "role" },
       { value: "trap" },
       { value: "set" },
+      { value: "predict bet" },
+      { value: "predict trap" },
     ],
   });
 
@@ -275,6 +347,8 @@ const proceedTurn = async () => {
   }
   if (action === "trap") await trap();
   if (action === "set") await set();
+  if (action === "predict bet") predictBet();
+  if (action === "predict trap") await predictTrap();
 };
 
 const main = async () => {
