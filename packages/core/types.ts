@@ -2,7 +2,7 @@
 export interface Dice {
 	color: string;
 	value: number;
-	role: () => number;
+	roll: () => number;
 }
 
 export interface EffectTile {
@@ -23,10 +23,6 @@ export interface RoundBetCard {
 	value: number;
 }
 
-export interface RollToken {
-	value: number;
-}
-
 export interface PartnershipCard {
 	owner: string;
 }
@@ -38,12 +34,15 @@ export interface Player {
 	partnershipCard: PartnershipCard;
 	gameBetCards: GameBetCard[];
 	roundBetCards: RoundBetCard[];
-	rollTokens: RollToken[];
+	rollTokens: unknown[];
 }
 
 // composite types
 export interface Track {
-	effectTile: EffectTile | undefined;
+	effectTile:
+		| { negative: EffectTile; positive: never }
+		| { positive: EffectTile; negative: never }
+		| undefined;
 	runners: Runner[];
 }
 
@@ -55,6 +54,7 @@ export interface Board {
 	firstOfTheGameBetCards: GameBetCard[];
 	lastOfTheGameBetCards: GameBetCard[];
 	tracks: Track[];
+	rollTokens: unknown[];
 }
 
 export interface GameState {
@@ -62,7 +62,7 @@ export interface GameState {
 	activePlayer: string;
 }
 
-type Action =
+export type Action =
 	| { type: "roll" }
 	| { type: "roundBet"; color: string }
 	| { type: "setEffectTile"; trackIndex: number; effect: "+" | "-" }
@@ -74,5 +74,4 @@ export interface GameManager {
 	read: () => GameState;
 	init: () => GameState;
 	play: (playerId: string, action: Action) => GameState[];
-	getActivePlayer: () => string;
 }
