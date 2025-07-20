@@ -1,4 +1,5 @@
-import type { Board, Dice, Player } from "./types";
+import type { Board, Dice, Player } from "../types";
+import { shuffle } from "../utils";
 
 const TRACK_LENGTH = 16;
 const DEFAULT_MONEY = 3;
@@ -15,11 +16,7 @@ const createDice = (color: string): Dice => {
 		return value;
 	};
 
-	return {
-		color,
-		value,
-		role,
-	};
+	return { color, value, role };
 };
 
 const createPlayer = (id: string): Player => ({
@@ -32,19 +29,30 @@ const createPlayer = (id: string): Player => ({
 	rollTokens: [],
 });
 
-const createBoard = (): Board => ({
-	players: ([] as string[]).map((id) => createPlayer(id)),
-	unrolledDices: COLORS.map((color) => createDice(color)),
-	rolledDices: [],
-	roundBetCards: Object.fromEntries(
-		COLORS.map((color) => [
-			color,
-			[5, 3, 2, 2].map((value) => ({ color, value })),
-		]),
-	),
-	firstOfTheGameBetCards: [],
-	lastOfTheGameBetCards: [],
-	tracks: new Array(TRACK_LENGTH)
-		.fill(0)
-		.map(() => ({ effectTile: undefined, runners: [] })),
-});
+const createBoard = (): Board => {
+	const board: Board = {
+		players: ([] as string[]).map((id) => createPlayer(id)),
+		unrolledDices: [...COLORS, "gray"].map((color) => createDice(color)),
+		rolledDices: [],
+		roundBetCards: Object.fromEntries(
+			COLORS.map((color) => [
+				color,
+				[5, 3, 2, 2].map((value) => ({ color, value })),
+			]),
+		),
+		firstOfTheGameBetCards: [],
+		lastOfTheGameBetCards: [],
+		tracks: new Array(TRACK_LENGTH)
+			.fill(0)
+			.map(() => ({ effectTile: undefined, runners: [] })),
+	};
+
+	shuffle(COLORS.map((color) => ({ color }))).forEach((runner) => {
+		board.tracks.at(Math.floor(3 * Math.random()))?.runners.push(runner);
+	});
+	shuffle(MAD_COLORS.map((color) => ({ color }))).forEach((runner) => {
+		board.tracks.at(-Math.floor(3 * Math.random()) - 1)?.runners.push(runner);
+	});
+
+	return board;
+};
