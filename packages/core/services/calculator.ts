@@ -6,13 +6,13 @@ interface Runner<
 	bottom: Track<RunnerColors>;
 	below: Runner<RunnerColors> | Track<RunnerColors>;
 	above: Runner<RunnerColors> | undefined;
-	top: Runner<RunnerColors> | undefined;
+	top: Runner<RunnerColors> | Track<RunnerColors>;
 }
 
 interface Track<RunnerColors extends string> {
 	index: number;
 	above: Runner<RunnerColors> | undefined;
-	top: Runner<RunnerColors> | undefined;
+	top: Runner<RunnerColors> | Track<RunnerColors>;
 }
 
 interface TrackState<RunnerColors extends string> {
@@ -20,8 +20,8 @@ interface TrackState<RunnerColors extends string> {
 	tracks: Track<RunnerColors>[];
 }
 
-export const createTrack = (index: number) => {
-	const track = {
+export const createTrack = <RunnerColors extends string>(index: number) => {
+	const track: Track<RunnerColors> = {
 		index,
 		above: undefined,
 		get top() {
@@ -39,7 +39,7 @@ export const createRunner = <
 	color: Color,
 	below: Runner<RunnerColors> | Track<RunnerColors>,
 ): Runner<RunnerColors, Color> => {
-	const runner = {
+	const runner: Runner<RunnerColors, Color> = {
 		color,
 		below,
 		above: undefined,

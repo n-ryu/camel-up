@@ -4,7 +4,7 @@ import {
 	deserializeTrackState,
 	move,
 	serializeTrackState,
-} from "./track";
+} from "./calculator";
 
 describe("createTrack", () => {
 	it("creates track with given index", () => {
