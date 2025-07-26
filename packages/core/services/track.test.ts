@@ -1,4 +1,10 @@
-import { createRunner, createTrack, createTrackState } from "./track";
+import {
+	createRunner,
+	createTrack,
+	deserializeTrackState,
+	move,
+	serializeTrackState,
+} from "./track";
 
 describe("createTrack", () => {
 	it("creates track with given index", () => {
@@ -56,9 +62,9 @@ describe("track & runner", () => {
 	});
 });
 
-describe("createTrackState", () => {
-	it("creates tracks, runners, and tiles in given state", () => {
-		const trackState = createTrackState([
+describe("deserializeTrackState", () => {
+	it("creates deserialized tracks and runners with given state", () => {
+		const trackState = deserializeTrackState([
 			{ runners: [] },
 			{ runners: ["red"] },
 			{ runners: ["blue", "green", "yellow"] },
@@ -86,10 +92,127 @@ describe("createTrackState", () => {
 });
 
 describe("move", () => {
-	it.todo("moves runner with given color for given amount of spaces");
-	it.todo("moves runner to the top of the destination");
-	it.todo("moves the runners above the designated runner along with it.");
-	it.todo(
-		"(with `toTheBottom` flag) puts the runner and runners above it to the bottom of the destination",
-	);
+	it("moves runner with given color for given amount of spaces", () => {
+		const trackState = deserializeTrackState([
+			{ runners: [] },
+			{ runners: ["red"] },
+			{ runners: ["blue", "green", "yellow"] },
+			{ runners: [] },
+			{ runners: ["purple"] },
+		]);
+
+		move(trackState, "red", 2);
+
+		expect(trackState.runners.red.bottom.index).toBe(3);
+		expect(trackState.tracks[3].above).toBe(trackState.runners.red);
+	});
+
+	it("moves runner to the top of the destination", () => {
+		const trackState = deserializeTrackState([
+			{ runners: [] },
+			{ runners: ["red"] },
+			{ runners: ["blue", "green", "yellow"] },
+			{ runners: [] },
+			{ runners: ["purple"] },
+		]);
+
+		move(trackState, "red", 1);
+
+		expect(trackState.runners.red.below).toBe(trackState.runners.yellow);
+		expect(trackState.runners.yellow.above).toBe(trackState.runners.red);
+
+		expect(trackState.runners.red.bottom).toBe(trackState.tracks[2]);
+		expect(trackState.tracks[2].top).toBe(trackState.runners.red);
+	});
+
+	it("moves the runners above the designated runner along with it.", () => {
+		const trackState = deserializeTrackState([
+			{ runners: [] },
+			{ runners: ["red"] },
+			{ runners: ["blue", "green", "yellow"] },
+			{ runners: [] },
+			{ runners: ["purple"] },
+		]);
+
+		move(trackState, "green", 2);
+
+		expect(trackState.runners.blue.above).toBeUndefined();
+
+		expect(trackState.runners.green.below).toBe(trackState.runners.purple);
+		expect(trackState.runners.purple.above).toBe(trackState.runners.green);
+
+		expect(trackState.tracks[4].top).toBe(trackState.runners.yellow);
+		expect(trackState.runners.yellow.bottom).toBe(trackState.tracks[4]);
+	});
+
+	it("(with `toTheBottom` flag) puts the runner and runners above it to the bottom of the destination", () => {
+		const trackState = deserializeTrackState([
+			{ runners: [] },
+			{ runners: ["red"] },
+			{ runners: ["blue", "green", "yellow"] },
+			{ runners: [] },
+			{ runners: ["purple"] },
+		]);
+
+		move(trackState, "green", 2, { toTheBottom: true });
+
+		expect(trackState.runners.blue.above).toBeUndefined();
+
+		expect(trackState.runners.green.below).toBe(trackState.tracks[4]);
+		expect(trackState.tracks[4].above).toBe(trackState.runners.green);
+
+		expect(trackState.runners.yellow.above).toBe(trackState.runners.purple);
+		expect(trackState.runners.purple.below).toBe(trackState.runners.yellow);
+
+		expect(trackState.tracks[4].top).toBe(trackState.runners.purple);
+		expect(trackState.runners.purple.bottom).toBe(trackState.tracks[4]);
+	});
+
+	it("appends the tracks array if the destination should be latter than the last track", () => {
+		const trackState = deserializeTrackState([
+			{ runners: [] },
+			{ runners: ["red"] },
+		]);
+
+		move(trackState, "red", 3, { toTheBottom: true });
+
+		expect(trackState.tracks.length).toBe(5);
+		expect(trackState.tracks[1].above).toBeUndefined();
+		expect(trackState.tracks[2].above).toBeUndefined();
+		expect(trackState.tracks[3].above).toBeUndefined();
+		expect(trackState.tracks[4].above).toBe(trackState.runners.red);
+	});
+
+	it("throws an error if the destination should be former than the first track", () => {
+		const trackState = deserializeTrackState([
+			{ runners: [] },
+			{ runners: ["red"] },
+		]);
+
+		expect(() => move(trackState, "red", -3, { toTheBottom: true })).toThrow(
+			"runner cannot be former than the first track",
+		);
+	});
+});
+
+describe("serializeTrackState", () => {
+	it("serializes given deserialized trackState", () => {
+		const trackState = deserializeTrackState([
+			{ runners: [] },
+			{ runners: ["red"] },
+			{ runners: ["blue", "green", "yellow"] },
+			{ runners: [] },
+			{ runners: ["purple"] },
+		]);
+
+		move(trackState, "green", 2);
+
+		expect(serializeTrackState(trackState)).toEqual([
+			{ runners: [] },
+			{ runners: ["red"] },
+			{ runners: ["blue"] },
+			{ runners: [] },
+			{ runners: ["purple", "green", "yellow"] },
+		]);
+	});
 });
