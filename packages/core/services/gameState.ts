@@ -13,6 +13,40 @@ interface RoundBetCard<Color extends string> {
 	value: number[];
 }
 
+const mutableTuple = <T extends string[]>(...args: T) => args;
+
+export const RUNNER_COLORS = mutableTuple(
+	"red",
+	"blue",
+	"green",
+	"yellow",
+	"purple",
+);
+
+export const MAD_RUNNER_COLORS = mutableTuple("black", "white");
+
+export const DEFAULT_DICES: UnrolledDice<
+	(typeof RUNNER_COLORS)[number] | "gray",
+	(typeof RUNNER_COLORS)[number] | (typeof MAD_RUNNER_COLORS)[number]
+>[] = [
+	...RUNNER_COLORS.map((color) => ({
+		color,
+		options: [1, 2, 3].map((value) => ({
+			runnerColor: color,
+			value,
+		})),
+	})),
+	{
+		color: "gray",
+		options: MAD_RUNNER_COLORS.flatMap((color) =>
+			[1, 2, 3].map((value) => ({
+				runnerColor: color,
+				value,
+			})),
+		),
+	},
+];
+
 export interface GameState<
 	RunnerColors extends string,
 	DiceColors extends string,
@@ -43,5 +77,7 @@ export interface GameState<
 		gameBetting: RunnerColors[];
 		roundBetting: RoundBetCard<RunnerColors>[];
 		partnership: string | undefined;
+		isActive: boolean;
+		isRoundLead: boolean;
 	}[];
 }
