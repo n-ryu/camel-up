@@ -61,7 +61,7 @@ export const deserializeTrackState = <RunnerColors extends string>(
 		runners: RunnerColors[];
 	}[],
 ): TrackState<RunnerColors> => {
-	const innerTracks = tracks.map((_, i) => createTrack(i));
+	const innerTracks = tracks.map((_, i) => createTrack<RunnerColors>(i));
 	const runnerList: Runner<RunnerColors>[] = [];
 	tracks.forEach(({ runners }, i) =>
 		runners.forEach((color) => {
