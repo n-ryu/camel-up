@@ -2,15 +2,14 @@ describe("roll", () => {
 	/*
     rollDice & giveDiceRollToken
     --> moveRunners 
-    --> isOnEffectTile (--true--> moveRunners & resolveEffectTileReward) 
+    --> isOnEffectTile (--true-->  resolveEffectTileReward --> moveRunners) 
     --> isGameEnded || isRoundEnded (
       --true--> resetEffectTiles 
-      & resetDices 
-      & resolveDiceRollReward[] 
-      & (resetRoundBet & resolveRoundBetReward)[] 
-      --> (resetPartnership & resolvePartnershipReward)[]
+      & resolveDiceRollReward 
+      & resolveRoundBetReward
+      --> resolvePartnershipReward
       --> isGameEnded (
-        --true--> (resetGameBet & resolveGameBetReward)[]
+        --true--> resolveGameBetReward
         --> endGame
       )
     )

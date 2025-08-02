@@ -406,3 +406,16 @@ export const advanceRoundLead = <R extends string, D extends string>(
 		draft.players[nextPlayerIndex].isRoundLead = true;
 	});
 };
+
+export const resetEffectTiles = <R extends string, D extends string>(
+	gameState: GameState<R, D>,
+): GameState<R, D> => {
+	return produce(gameState, (draft) => {
+		draft.tracks.forEach((track) => {
+			track.effectTile = undefined;
+		});
+		draft.players.forEach((player) => {
+			player.hasEffectTile = true;
+		});
+	});
+};
