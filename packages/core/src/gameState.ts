@@ -94,6 +94,8 @@ export const rollDice = <R extends string, D extends string>(
 	gameState: GameState<R, D>,
 	playerId: string,
 ): GameState<R, D> => {
+	checkActivePlayer(gameState, playerId);
+
 	return produce(gameState, (draft) => {
 		const player = draft.players.find(({ id }) => playerId === id);
 		if (!player) throw new Error("player does not exist");
@@ -137,6 +139,8 @@ export const setEffectTile = <R extends string, D extends string>(
 	trackIndex: number,
 	type: 1 | -1,
 ): GameState<R, D> => {
+	checkActivePlayer(gameState, playerId);
+
 	return produce(gameState, (draft) => {
 		const player = draft.players.find(({ id }) => playerId === id);
 		if (!player) throw new Error("player does not exist");
@@ -198,6 +202,8 @@ export const betRound = <R extends string, D extends string>(
 	playerId: string,
 	color: R,
 ): GameState<R, D> => {
+	checkActivePlayer(gameState, playerId);
+
 	return produce(gameState, (draft) => {
 		const player = draft.players.find(({ id }) => playerId === id);
 		if (!player) throw new Error("player does not exist");
@@ -248,6 +254,8 @@ export const betGame = <R extends string, D extends string>(
 	color: R,
 	betType: "first" | "last",
 ): GameState<R, D> => {
+	checkActivePlayer(gameState, playerId);
+
 	return produce(gameState, (draft) => {
 		const player = draft.players.find(({ id }) => playerId === id);
 		if (!player) throw new Error("player does not exist");
@@ -306,6 +314,8 @@ export const setPartnership = <R extends string, D extends string>(
 	playerId1: string,
 	playerId2: string,
 ): GameState<R, D> => {
+	checkActivePlayer(gameState, playerId1);
+
 	return produce(gameState, (draft) => {
 		const player1 = draft.players.find(({ id }) => playerId1 === id);
 		if (!player1) throw new Error("player does not exist");
@@ -361,4 +371,38 @@ export const isGameEnded = <R extends string, D extends string>(
 	gameState: GameState<R, D>,
 ): boolean => {
 	return gameState.tracks.length > gameState.initialTrackLength;
+};
+
+const checkActivePlayer = <R extends string, D extends string>(
+	gameState: GameState<R, D>,
+	playerId: string,
+): void => {
+	if (!gameState.players.find(({ id }) => playerId === id)?.isActive)
+		throw new Error("it's not requested player's turn");
+};
+
+export const advanceTurn = <R extends string, D extends string>(
+	gameState: GameState<R, D>,
+): GameState<R, D> => {
+	return produce(gameState, (draft) => {
+		const activePlayerIndex = draft.players.findIndex(
+			({ isActive }) => isActive,
+		);
+		draft.players[activePlayerIndex].isActive = false;
+		const nextPlayerIndex = (activePlayerIndex + 1) % draft.players.length;
+		draft.players[nextPlayerIndex].isActive = true;
+	});
+};
+
+export const advanceRoundLead = <R extends string, D extends string>(
+	gameState: GameState<R, D>,
+): GameState<R, D> => {
+	return produce(gameState, (draft) => {
+		const leadPlayerIndex = draft.players.findIndex(
+			({ isRoundLead }) => isRoundLead,
+		);
+		draft.players[leadPlayerIndex].isRoundLead = false;
+		const nextPlayerIndex = (leadPlayerIndex + 1) % draft.players.length;
+		draft.players[nextPlayerIndex].isRoundLead = true;
+	});
 };
