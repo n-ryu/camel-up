@@ -1,7 +1,7 @@
 import { type Draft, produce } from "immer";
 import { deserializeTrackState, move, serializeTrackState } from "./calculator";
 
-interface UnrolledDice<DiceColor extends string, RunnerColor extends string> {
+export interface Dice<DiceColor extends string, RunnerColor extends string> {
 	color: DiceColor;
 	options: { runnerColor: RunnerColor; value: number }[];
 }
@@ -36,7 +36,7 @@ export interface GameState<
 	}[];
 
 	dices: {
-		unrolled: UnrolledDice<DiceColors, RunnerColors>[];
+		unrolled: Dice<DiceColors, RunnerColors>[];
 		rolled: RolledDice<DiceColors, RunnerColors>[];
 	};
 

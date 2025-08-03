@@ -1,4 +1,5 @@
-describe("roll", () => {
+it.todo(
+	"roll",
 	/*
     rollDice & giveDiceRollToken
     --> moveRunners 
@@ -14,28 +15,32 @@ describe("roll", () => {
       )
     )
   */
-});
+);
 
-describe("betRound", () => {
+it.todo(
+	"betRound",
 	/*
     betRound
   */
-});
+);
 
-describe("betGame", () => {
+it.todo(
+	"betGame",
 	/*
     betGame
   */
-});
+);
 
-describe("setEffectTile", () => {
+it.todo(
+	"setEffectTile",
 	/*
     setEffectTile
   */
-});
+);
 
-describe("partnerWith", () => {
+it.todo(
+	"partnerWith",
 	/*
     partnerWith
   */
-});
+);
