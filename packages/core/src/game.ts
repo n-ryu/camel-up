@@ -1,3 +1,4 @@
+import { shuffle } from "../utils";
 import type { Dice, GameState } from "./gameState";
 
 export interface GameOptions<
@@ -8,7 +9,7 @@ export interface GameOptions<
 	gameBetRewards: { first: number[]; last: number[] };
 	gameBetPenalty: { first: number; last: number };
 	roundBetRewards: number[][];
-	runnerOptions?: {
+	runnerOptions: {
 		runnerColors: RunnerColors[];
 		madRunnerColors: RunnerColors[];
 		dices: {
@@ -73,20 +74,38 @@ export class Game<
 		| "purple"
 		| "gray",
 > {
+	readonly options: GameOptions<RunnerColors, DiceColors>;
+	readonly runners: RunnerColors[];
+	readonly madRunners: RunnerColors[];
 	gameState: GameState<RunnerColors, DiceColors>;
 
 	constructor(
-		playersIds: string[],
+		readonly playersIds: string[],
 		options?: Partial<GameOptions<RunnerColors, DiceColors>>,
 	) {
+		this.options = { ...defaultOptions, ...options } as GameOptions<
+			RunnerColors,
+			DiceColors
+		>;
+
+		this.madRunners = this.options.runnerOptions.madRunnerColors;
+		this.runners = this.options.runnerOptions.runnerColors.filter(
+			(color) => !this.madRunners.includes(color),
+		);
+
+		this.init();
+	}
+
+	init() {
 		const {
-			runnerOptions: { runnerColors, madRunnerColors, dices },
+			runnerOptions: { dices },
 			trackLength,
 			gameBetRewards,
 			gameBetPenalty,
 			roundBetRewards,
 			rollTokens,
-		} = { ...defaultOptions, ...options };
+		} = this.options;
+
 		this.gameState = {
 			initialTrackLength: trackLength,
 			gameBetRewards,
@@ -101,21 +120,17 @@ export class Game<
 			rollTokens,
 			gameBetting: { first: [], last: [] },
 			roundBetting: Object.fromEntries([
-				...runnerColors
-					.filter((color) => !madRunnerColors.includes(color))
-					.map((color) => [
-						color,
-						roundBetRewards.map((value) => ({ color, value: [...value] })),
-					]),
-				...madRunnerColors.map((color) => [color, []]),
+				...this.runners.map((color) => [
+					color,
+					roundBetRewards.map((value) => ({ color, value: [...value] })),
+				]),
+				...this.madRunners.map((color) => [color, []]),
 			]) as GameState<RunnerColors, DiceColors>["roundBetting"],
-			players: playersIds.map((id, i) => ({
+			players: this.playersIds.map((id, i) => ({
 				id,
 				money: 0,
 				hasEffectTile: true,
-				gameBetting: runnerColors.filter(
-					(color) => !madRunnerColors.includes(color),
-				) as RunnerColors[],
+				gameBetting: [...this.runners],
 				roundBetting: [],
 				partnership: undefined,
 				isActive: i === 0,
@@ -123,5 +138,27 @@ export class Game<
 				rollTokens: [],
 			})),
 		};
+
+		shuffle([...this.runners, ...this.madRunners]).forEach((color) => {
+			const dices = this.options.runnerOptions.dices;
+			const options = dices.flatMap(({ options }) =>
+				options
+					.filter(({ runnerColor }) => runnerColor === color)
+					.map(({ value }) => value),
+			);
+			const result = options[Math.floor(Math.random() * options.length)];
+
+			this.gameState.tracks
+				.at(this.runners.includes(color) ? result - 1 : -result)
+				?.runners.push(color);
+		});
 	}
+
+	betRound() {}
+
+	betGame() {}
+
+	setEffectTile() {}
+
+	partnerWith() {}
 }

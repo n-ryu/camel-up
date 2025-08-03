@@ -1,3 +1,5 @@
+it.todo("init");
+
 it.todo(
 	"roll",
 	/*
