@@ -171,20 +171,25 @@ export const setEffectTile = <R extends string, D extends string>(
 
 export const isOnEffectTile = <R extends string, D extends string>(
 	gameState: GameState<R, D>,
-): { value: true; index: number } | { value: false; index: undefined } => {
+): { index: number; type: 1 | -1; runnerColor: R } | undefined => {
 	const index = gameState.tracks.findIndex(
 		({ runners, effectTile }) => runners.length > 0 && !!effectTile,
 	);
 	return index === -1
-		? { value: false, index: undefined }
-		: { value: true, index };
+		? undefined
+		: {
+				index,
+				type: gameState.tracks[index].effectTile!.type,
+				runnerColor: gameState.tracks[index].runners[0],
+			};
 };
 
 export const resolveEffectTileReward = <R extends string, D extends string>(
 	gameState: GameState<R, D>,
 ): GameState<R, D> => {
-	const { value, index } = isOnEffectTile(gameState);
-	if (!value) throw new Error("no track has runners on an effect tile");
+	const { index } = isOnEffectTile(gameState) ?? {};
+	if (index === undefined)
+		throw new Error("no track has runners on an effect tile");
 
 	return produce(gameState, (draft) => {
 		// biome-ignore lint/style/noNonNullAssertion: existence is guaranteed
@@ -401,9 +406,13 @@ export const advanceRoundLead = <R extends string, D extends string>(
 		const leadPlayerIndex = draft.players.findIndex(
 			({ isRoundLead }) => isRoundLead,
 		);
-		draft.players[leadPlayerIndex].isRoundLead = false;
 		const nextPlayerIndex = (leadPlayerIndex + 1) % draft.players.length;
+		draft.players.forEach((player) => {
+			player.isRoundLead = false;
+			player.isActive = false;
+		});
 		draft.players[nextPlayerIndex].isRoundLead = true;
+		draft.players[nextPlayerIndex].isActive = true;
 	});
 };
 

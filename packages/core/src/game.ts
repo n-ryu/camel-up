@@ -1,5 +1,27 @@
 import { shuffle } from "../utils";
-import type { Dice, GameState } from "./gameState";
+import {
+	advanceRoundLead,
+	advanceTurn,
+	betGame,
+	betRound,
+	type Dice,
+	type GameState,
+	isGameEnded,
+	isOnEffectTile,
+	isRoundEnded,
+	moveRunners,
+	resetEffectTiles,
+	resolveDiceRollReward,
+	resolveEffectTileReward,
+	resolveGameBetReward,
+	resolvePartnershipReward,
+	resolveRoundBetReward,
+	rollDice,
+	setEffectTile,
+	setPartnership,
+} from "./gameState";
+
+type Action = string;
 
 export interface GameOptions<
 	RunnerColors extends string,
@@ -122,7 +144,9 @@ export class Game<
 			roundBetting: Object.fromEntries([
 				...this.runners.map((color) => [
 					color,
-					roundBetRewards.map((value) => ({ color, value: [...value] })),
+					roundBetRewards
+						.map((value) => ({ color, value: [...value] }))
+						.toSorted((a, b) => a.value[0] - b.value[0]),
 				]),
 				...this.madRunners.map((color) => [color, []]),
 			]) as GameState<RunnerColors, DiceColors>["roundBetting"],
@@ -154,11 +178,88 @@ export class Game<
 		});
 	}
 
-	betRound() {}
+	private createActor() {
+		const actions: {
+			action: Action;
+			state: GameState<RunnerColors, DiceColors>;
+		}[] = [];
 
-	betGame() {}
+		return (
+			action: Action,
+			fn: (
+				gameState: GameState<RunnerColors, DiceColors>,
+			) => GameState<RunnerColors, DiceColors>,
+		) => {
+			this.gameState = fn(this.gameState);
+			actions.push({ action, state: this.gameState });
+			return [...actions];
+		};
+	}
 
-	setEffectTile() {}
+	roll(playerId: string) {
+		const act = this.createActor();
 
-	partnerWith() {}
+		act("rollDice", (gameState) => rollDice(gameState, playerId));
+		act("moveRunners", (gameState) => {
+			const { runnerColor, value } = gameState.dices.rolled.at(-1)!.prevResult;
+			return moveRunners(gameState, runnerColor, value);
+		});
+
+		const effectTileValidation = isOnEffectTile(this.gameState);
+		if (effectTileValidation) {
+			act("resolveEffectTileReward", resolveEffectTileReward);
+			act("moveRunners", (gameState) =>
+				moveRunners(
+					gameState,
+					effectTileValidation.runnerColor,
+					effectTileValidation.type,
+				),
+			);
+		}
+
+		if (!isGameEnded(this.gameState) && !isRoundEnded(this.gameState))
+			return act("advanceTurn", advanceTurn);
+
+		act("resetEffectTiles", resetEffectTiles);
+		act("resolvePartnershipReward", resolvePartnershipReward);
+		act("resolveDiceRollReward", resolveDiceRollReward);
+		act("resolveRoundBetReward", resolveRoundBetReward);
+
+		if (!isGameEnded(this.gameState))
+			return act("advanceRoundLead", advanceRoundLead);
+
+		return act("resolveGameBetReward", resolveGameBetReward);
+	}
+
+	betRound(playerId: string, color: RunnerColors) {
+		const act = this.createActor();
+
+		act("betRound", (gameState) => betRound(gameState, playerId, color));
+		return act("advanceTurn", advanceTurn);
+	}
+
+	betGame(playerId: string, color: RunnerColors, type: "first" | "last") {
+		const act = this.createActor();
+
+		act("betGame", (gameState) => betGame(gameState, playerId, color, type));
+		return act("advanceTurn", advanceTurn);
+	}
+
+	setEffectTile(playerId: string, trackIndex: number, type: 1 | -1) {
+		const act = this.createActor();
+
+		act("setEffectTile", (gameState) =>
+			setEffectTile(gameState, playerId, trackIndex, type),
+		);
+		return act("advanceTurn", advanceTurn);
+	}
+
+	partnerWith(playerId: string, partnerId: string) {
+		const act = this.createActor();
+
+		act("setPartnership", (gameState) =>
+			setPartnership(gameState, playerId, partnerId),
+		);
+		return act("advanceTurn", advanceTurn);
+	}
 }
