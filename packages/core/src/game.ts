@@ -1,4 +1,3 @@
-import { shuffle } from "../utils";
 import {
 	advanceRoundLead,
 	advanceTurn,
@@ -20,6 +19,7 @@ import {
 	setEffectTile,
 	setPartnership,
 } from "./gameState";
+import { shuffle } from "./utils";
 
 type Action = string;
 
