@@ -41,10 +41,12 @@ export class RoomService {
 
 		if (!room.players.has(player.id)) this.enterRoom(room.id, player);
 
-		room.publish({
-			action: "roomUpdate",
-			room: { id: room.id, players: [...room.players.values()] },
-		});
+		setTimeout(() =>
+			room.publish({
+				action: "roomUpdate",
+				room: { id: room.id, players: [...room.players.values()] },
+			}),
+		);
 
 		try {
 			for await (const [data] of on(room.ee, "data")) {
