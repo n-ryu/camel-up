@@ -6,7 +6,6 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "ts-node ./src/server.ts",
-    "panel": "ts-node ./panel.ts",
     "type": "tsc --noEmit"
   },
   "keywords": [],
@@ -17,14 +16,13 @@
     "@camel-up/core": "workspace:*",
     "@trpc/server": "^11.4.4",
     "ws": "^8.18.3",
-    "zod": "^4.0.16"
+    "zod": "^4.0.17"
   },
   "devDependencies": {
     "@types/express": "^5.0.3",
     "@types/node": "^24.1.0",
     "@types/ws": "^8.18.1",
     "express": "^5.1.0",
-    "trpc-ui": "^1.0.15",
     "ts-node": "^10.9.2"
   }
 }
