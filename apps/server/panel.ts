@@ -1,5 +1,5 @@
 import * as http from "node:http";
-import * as express from "express";
+import express from "express";
 import { appRouter } from "./src/router";
 
 const PANEL_PORT = 9999;
