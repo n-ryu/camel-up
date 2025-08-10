@@ -1,7 +1,7 @@
 import { initTRPC } from "@trpc/server";
 import z from "zod";
 import type { Context } from "./context";
-import { RoomService } from "./services/room.service";
+import { RoomService } from "./room";
 
 const t = initTRPC.context<Context>().create();
 
