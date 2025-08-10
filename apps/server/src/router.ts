@@ -12,13 +12,58 @@ const roomService = new RoomService();
 
 export const appRouter = router({
 	// for game play
-	getGame: procedure.query(() => {}),
-	start: procedure.mutation(() => {}),
-	roll: procedure.mutation(() => {}),
-	betRound: procedure.mutation(() => {}),
-	betGame: procedure.mutation(() => {}),
-	partnerWith: procedure.mutation(() => {}),
-	setEffectTile: procedure.mutation(() => {}),
+	start: procedure
+		.input(z.object({ roomId: z.string() }))
+		.mutation(({ input: { roomId } }) => {
+			roomService.start(roomId);
+		}),
+	roll: procedure
+		.input(z.object({ roomId: z.string() }))
+		.mutation(({ ctx: { connectionId }, input: { roomId } }) => {
+			roomService.roll(roomId, connectionId);
+		}),
+	betRound: procedure
+		.input(
+			z.object({
+				roomId: z.string(),
+				color: z.enum(["red", "blue", "green", "yellow", "purple"]),
+			}),
+		)
+		.mutation(({ ctx: { connectionId }, input: { roomId, color } }) => {
+			roomService.betRound(roomId, connectionId, color);
+		}),
+	betGame: procedure
+		.input(
+			z.object({
+				roomId: z.string(),
+				color: z.enum(["red", "blue", "green", "yellow", "purple"]),
+				type: z.enum(["first", "last"]),
+			}),
+		)
+		.mutation(({ ctx: { connectionId }, input: { roomId, color, type } }) => {
+			roomService.betGame(roomId, connectionId, color, type);
+		}),
+	partnerWith: procedure
+		.input(z.object({ roomId: z.string(), partnerId: z.string() }))
+		.mutation(({ ctx: { connectionId }, input: { roomId, partnerId } }) => {
+			roomService.partnerWith(roomId, connectionId, partnerId);
+		}),
+	setEffectTile: procedure
+		.input(
+			z.object({
+				roomId: z.string(),
+				index: z.number(),
+				type: z.enum(["1", "-1"]),
+			}),
+		)
+		.mutation(({ ctx: { connectionId }, input: { roomId, index, type } }) => {
+			roomService.setEffectTile(
+				roomId,
+				connectionId,
+				index,
+				Number(type) as 1 | -1,
+			);
+		}),
 
 	// for game subscription
 	subscribe: procedure
