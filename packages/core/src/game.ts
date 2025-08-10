@@ -21,7 +21,28 @@ import {
 } from "./gameState";
 import { shuffle } from "./utils";
 
-type Action = string;
+export type Action =
+	| "init"
+	| "rollDice"
+	| "moveRunners"
+	| "resolveEffectTileReward"
+	| "moveRunners"
+	| "advanceTurn"
+	| "resetEffectTiles"
+	| "resolvePartnershipReward"
+	| "resolveDiceRollReward"
+	| "resolveRoundBetReward"
+	| "advanceRoundLead"
+	| "resolveGameBetReward"
+	| "end"
+	| "betRound"
+	| "advanceTurn"
+	| "betGame"
+	| "advanceTurn"
+	| "setEffectTile"
+	| "advanceTurn"
+	| "setPartnership"
+	| "advanceTurn";
 
 export interface GameOptions<
 	RunnerColors extends string,
@@ -180,6 +201,8 @@ export class Game<
 				.at(this.runners.includes(color) ? result - 1 : -result)
 				?.runners.push(color);
 		});
+
+		return this.createActor()("init", (gameState) => gameState);
 	}
 
 	private createActor() {
@@ -232,7 +255,8 @@ export class Game<
 		if (!isGameEnded(this.gameState))
 			return act("advanceRoundLead", advanceRoundLead);
 
-		return act("resolveGameBetReward", resolveGameBetReward);
+		act("resolveGameBetReward", resolveGameBetReward);
+		return act("end", (gameState) => gameState);
 	}
 
 	betRound(playerId: string, color: RunnerColors) {

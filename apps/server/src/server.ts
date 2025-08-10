@@ -1,13 +1,15 @@
 import { applyWSSHandler } from "@trpc/server/adapters/ws";
-import ws from "ws";
+import { Server } from "ws";
+import { createContext } from "./context";
 import { appRouter } from "./router";
 
-const wss = ws.Server({
+const wss = new Server({
 	port: 3001,
 });
 const handler = applyWSSHandler({
 	wss,
 	router: appRouter,
+	createContext,
 	keepAlive: {
 		enabled: true,
 		pingMs: 30000,

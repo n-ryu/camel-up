@@ -1,20 +1,16 @@
 import { initTRPC } from "@trpc/server";
-import * as z from "zod";
+import z from "zod";
+import type { Context } from "./context";
+import { RoomService } from "./services/room.service";
 
-const t = initTRPC.create();
+const t = initTRPC.context<Context>().create();
 
 const router = t.router;
 const procedure = t.procedure;
 
-export const appRouter = router({
-	// for room management
-	getRoom: procedure.query(() => {}),
-	createRoom: procedure
-		.input(z.object({ playerName: z.string() }))
-		.mutation(({ playerName }) => {}),
-	enterRoom: procedure.mutation(() => {}),
-	exitRoom: procedure.mutation(() => {}),
+const roomService = new RoomService();
 
+export const appRouter = router({
 	// for game play
 	getGame: procedure.query(() => {}),
 	start: procedure.mutation(() => {}),
@@ -25,8 +21,19 @@ export const appRouter = router({
 	setEffectTile: procedure.mutation(() => {}),
 
 	// for game subscription
-	// subscribeRoom: procedure.subscription(() => {})
-	// subscribeGame: procedure.subscription(() => {}),
+	subscribe: procedure
+		.input(
+			z.object({
+				roomId: z.string().or(z.undefined()),
+				playerName: z.string(),
+			}),
+		)
+		.subscription(({ ctx, input: { roomId, playerName } }) =>
+			roomService.asyncIterator(roomId, {
+				id: ctx.connectionId,
+				name: playerName,
+			}),
+		),
 });
 
 export type AppRouter = typeof appRouter;
