@@ -1,1 +1,1 @@
-export { Game } from "./src/game";
+export { DefaultDiceColors, DefaultRunnerColors, Game } from "./src/game";

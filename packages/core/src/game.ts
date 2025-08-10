@@ -79,22 +79,26 @@ const defaultOptions = {
 	rollTokens: [1, 1, 1, 1, 1],
 };
 
+export type DefaultRunnerColors =
+	| "red"
+	| "blue"
+	| "green"
+	| "yellow"
+	| "purple"
+	| "black"
+	| "white";
+
+export type DefaultDiceColors =
+	| "red"
+	| "blue"
+	| "green"
+	| "yellow"
+	| "purple"
+	| "gray";
+
 export class Game<
-	RunnerColors extends string =
-		| "red"
-		| "blue"
-		| "green"
-		| "yellow"
-		| "purple"
-		| "black"
-		| "white",
-	DiceColors extends string =
-		| "red"
-		| "blue"
-		| "green"
-		| "yellow"
-		| "purple"
-		| "gray",
+	RunnerColors extends string = DefaultRunnerColors,
+	DiceColors extends string = DefaultDiceColors,
 > {
 	readonly options: GameOptions<RunnerColors, DiceColors>;
 	readonly runners: RunnerColors[];
