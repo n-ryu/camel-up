@@ -1,8 +1,8 @@
 import {
 	createRunner,
 	createTrack,
-	deserializeTrackState,
 	move,
+	parseTrackState,
 	serializeTrackState,
 } from "./calculator";
 
@@ -62,9 +62,9 @@ describe("track & runner", () => {
 	});
 });
 
-describe("deserializeTrackState", () => {
+describe("parseTrackState", () => {
 	it("creates deserialized tracks and runners with given state", () => {
-		const trackState = deserializeTrackState([
+		const trackState = parseTrackState([
 			{ runners: [] },
 			{ runners: ["red"] },
 			{ runners: ["blue", "green", "yellow"] },
@@ -93,7 +93,7 @@ describe("deserializeTrackState", () => {
 
 describe("move", () => {
 	it("moves runner with given color for given amount of spaces", () => {
-		const trackState = deserializeTrackState([
+		const trackState = parseTrackState([
 			{ runners: [] },
 			{ runners: ["red"] },
 			{ runners: ["blue", "green", "yellow"] },
@@ -108,7 +108,7 @@ describe("move", () => {
 	});
 
 	it("moves runner to the top of the destination", () => {
-		const trackState = deserializeTrackState([
+		const trackState = parseTrackState([
 			{ runners: [] },
 			{ runners: ["red"] },
 			{ runners: ["blue", "green", "yellow"] },
@@ -126,7 +126,7 @@ describe("move", () => {
 	});
 
 	it("moves the runners above the designated runner along with it.", () => {
-		const trackState = deserializeTrackState([
+		const trackState = parseTrackState([
 			{ runners: [] },
 			{ runners: ["red"] },
 			{ runners: ["blue", "green", "yellow"] },
@@ -146,7 +146,7 @@ describe("move", () => {
 	});
 
 	it("(with `toTheBottom` flag) puts the runner and runners above it to the bottom of the destination", () => {
-		const trackState = deserializeTrackState([
+		const trackState = parseTrackState([
 			{ runners: [] },
 			{ runners: ["red"] },
 			{ runners: ["blue", "green", "yellow"] },
@@ -169,10 +169,7 @@ describe("move", () => {
 	});
 
 	it("appends the tracks array if the destination should be latter than the last track", () => {
-		const trackState = deserializeTrackState([
-			{ runners: [] },
-			{ runners: ["red"] },
-		]);
+		const trackState = parseTrackState([{ runners: [] }, { runners: ["red"] }]);
 
 		move(trackState, "red", 3, { toTheBottom: true });
 
@@ -184,10 +181,7 @@ describe("move", () => {
 	});
 
 	it("throws an error if the destination should be former than the first track", () => {
-		const trackState = deserializeTrackState([
-			{ runners: [] },
-			{ runners: ["red"] },
-		]);
+		const trackState = parseTrackState([{ runners: [] }, { runners: ["red"] }]);
 
 		expect(() => move(trackState, "red", -3, { toTheBottom: true })).toThrow(
 			"runner cannot be former than the first track",
@@ -197,7 +191,7 @@ describe("move", () => {
 
 describe("serializeTrackState", () => {
 	it("serializes given deserialized trackState", () => {
-		const trackState = deserializeTrackState([
+		const trackState = parseTrackState([
 			{ runners: [] },
 			{ runners: ["red"] },
 			{ runners: ["blue", "green", "yellow"] },

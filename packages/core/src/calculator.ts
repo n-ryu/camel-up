@@ -56,7 +56,7 @@ export const createRunner = <
 	return runner;
 };
 
-export const deserializeTrackState = <RunnerColors extends string>(
+export const parseTrackState = <RunnerColors extends string>(
 	tracks: {
 		runners: RunnerColors[];
 	}[],

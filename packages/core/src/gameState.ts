@@ -1,5 +1,5 @@
 import { type Draft, produce } from "immer";
-import { deserializeTrackState, move, serializeTrackState } from "./calculator";
+import { move, parseTrackState, serializeTrackState } from "./calculator";
 
 export interface Dice<DiceColor extends string, RunnerColor extends string> {
 	color: DiceColor;
@@ -76,14 +76,9 @@ export const moveRunners = <R extends string, D extends string>(
 ): GameState<R, D> => {
 	return produce(gameState, (draft) => {
 		serializeTrackState(
-			move(
-				deserializeTrackState(draft.tracks),
-				runnerColor as Draft<R>,
-				value,
-				{
-					toTheBottom,
-				},
-			),
+			move(parseTrackState(draft.tracks), runnerColor as Draft<R>, value, {
+				toTheBottom,
+			}),
 		).forEach(({ runners }, i) => {
 			draft.tracks[i].runners = runners;
 		});
