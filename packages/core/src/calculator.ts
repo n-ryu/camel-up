@@ -1,27 +1,24 @@
-interface Runner<
-	RunnerColors extends string,
-	Color extends RunnerColors = RunnerColors,
-> {
-	color: Color;
-	bottom: Track<RunnerColors>;
-	below: Runner<RunnerColors> | Track<RunnerColors>;
-	above: Runner<RunnerColors> | undefined;
-	top: Runner<RunnerColors> | Track<RunnerColors>;
+interface Runner {
+	color: string;
+	bottom: Track;
+	below: Runner | Track;
+	above: Runner | undefined;
+	top: Runner | Track;
 }
 
-interface Track<RunnerColors extends string> {
+interface Track {
 	index: number;
-	above: Runner<RunnerColors> | undefined;
-	top: Runner<RunnerColors> | Track<RunnerColors>;
+	above: Runner | undefined;
+	top: Runner | Track;
 }
 
-interface TrackState<RunnerColors extends string> {
-	runners: { [RunnerColor in RunnerColors]: Runner<RunnerColors, RunnerColor> };
-	tracks: Track<RunnerColors>[];
+interface TrackState {
+	runners: Map<string, Runner>;
+	tracks: Track[];
 }
 
-export const createTrack = <RunnerColors extends string>(index: number) => {
-	const track: Track<RunnerColors> = {
+export const createTrack = (index: number) => {
+	const track: Track = {
 		index,
 		above: undefined,
 		get top() {
@@ -32,14 +29,8 @@ export const createTrack = <RunnerColors extends string>(index: number) => {
 	return track;
 };
 
-export const createRunner = <
-	RunnerColors extends string,
-	Color extends RunnerColors = RunnerColors,
->(
-	color: Color,
-	below: Runner<RunnerColors> | Track<RunnerColors>,
-): Runner<RunnerColors, Color> => {
-	const runner: Runner<RunnerColors, Color> = {
+export const createRunner = (color: string, below: Runner | Track): Runner => {
+	const runner: Runner = {
 		color,
 		below,
 		above: undefined,
@@ -56,13 +47,13 @@ export const createRunner = <
 	return runner;
 };
 
-export const parseTrackState = <RunnerColors extends string>(
+export const parseTrackState = (
 	tracks: {
-		runners: RunnerColors[];
+		runners: string[];
 	}[],
-): TrackState<RunnerColors> => {
-	const innerTracks = tracks.map((_, i) => createTrack<RunnerColors>(i));
-	const runnerList: Runner<RunnerColors>[] = [];
+): TrackState => {
+	const innerTracks = tracks.map((_, i) => createTrack(i));
+	const runnerList: Runner[] = [];
 	tracks.forEach(({ runners }, i) =>
 		runners.forEach((color) => {
 			const runner = createRunner(color, innerTracks[i].top);
@@ -72,19 +63,19 @@ export const parseTrackState = <RunnerColors extends string>(
 
 	return {
 		tracks: innerTracks,
-		runners: Object.fromEntries(
-			runnerList.map((runner) => [runner.color, runner]),
-		) as { [RunnerColor in RunnerColors]: Runner<RunnerColors, RunnerColor> },
+		runners: new Map(runnerList.map((runner) => [runner.color, runner])),
 	};
 };
 
-export const move = <RunnerColors extends string>(
-	trackState: TrackState<RunnerColors>,
-	color: RunnerColors,
+export const move = (
+	trackState: TrackState,
+	color: string,
 	amount: number,
 	options?: { toTheBottom?: boolean },
-): TrackState<RunnerColors> => {
-	const targetRunner = trackState.runners[color];
+): TrackState => {
+	const targetRunner = trackState.runners.get(color);
+
+	if (!targetRunner) throw new Error("No runner exists in given color");
 	const currentIndex = targetRunner.bottom.index;
 	const targetIndex = currentIndex + amount;
 
@@ -123,16 +114,16 @@ export const move = <RunnerColors extends string>(
 	return trackState;
 };
 
-export const serializeTrackState = <RunnerColors extends string>(
-	trackState: TrackState<RunnerColors>,
+export const serializeTrackState = (
+	trackState: TrackState,
 ): {
-	runners: RunnerColors[];
+	runners: string[];
 }[] => {
 	return trackState.tracks.map((track) => {
-		const runners: RunnerColors[] = [];
+		const runners: string[] = [];
 
 		if (track.above) {
-			const pushRunner = (runner: Runner<RunnerColors>) => {
+			const pushRunner = (runner: Runner) => {
 				runners.push(runner.color);
 				if (runner.above) pushRunner(runner.above);
 			};

@@ -78,16 +78,24 @@ describe("parseTrackState", () => {
 		expect(trackState.tracks[3].above).toBeUndefined();
 		expect(trackState.tracks[4].above).toHaveProperty("color", "purple");
 
-		expect(trackState.runners.red.below).toBe(trackState.tracks[1]);
-		expect(trackState.runners.red.above).toBeUndefined();
-		expect(trackState.runners.blue.below).toBe(trackState.tracks[2]);
-		expect(trackState.runners.blue.above).toBe(trackState.runners.green);
-		expect(trackState.runners.green.below).toBe(trackState.runners.blue);
-		expect(trackState.runners.green.above).toBe(trackState.runners.yellow);
-		expect(trackState.runners.yellow.below).toBe(trackState.runners.green);
-		expect(trackState.runners.yellow.above).toBeUndefined();
-		expect(trackState.runners.purple.below).toBe(trackState.tracks[4]);
-		expect(trackState.runners.purple.above).toBeUndefined();
+		expect(trackState.runners.get("red")?.below).toBe(trackState.tracks[1]);
+		expect(trackState.runners.get("red")?.above).toBeUndefined();
+		expect(trackState.runners.get("blue")?.below).toBe(trackState.tracks[2]);
+		expect(trackState.runners.get("blue")?.above).toBe(
+			trackState.runners.get("green"),
+		);
+		expect(trackState.runners.get("green")?.below).toBe(
+			trackState.runners.get("blue"),
+		);
+		expect(trackState.runners.get("green")?.above).toBe(
+			trackState.runners.get("yellow"),
+		);
+		expect(trackState.runners.get("yellow")?.below).toBe(
+			trackState.runners.get("green"),
+		);
+		expect(trackState.runners.get("yellow")?.above).toBeUndefined();
+		expect(trackState.runners.get("purple")?.below).toBe(trackState.tracks[4]);
+		expect(trackState.runners.get("purple")?.above).toBeUndefined();
 	});
 });
 
@@ -103,8 +111,8 @@ describe("move", () => {
 
 		move(trackState, "red", 2);
 
-		expect(trackState.runners.red.bottom.index).toBe(3);
-		expect(trackState.tracks[3].above).toBe(trackState.runners.red);
+		expect(trackState.runners.get("red")?.bottom.index).toBe(3);
+		expect(trackState.tracks[3].above).toBe(trackState.runners.get("red"));
 	});
 
 	it("moves runner to the top of the destination", () => {
@@ -118,11 +126,15 @@ describe("move", () => {
 
 		move(trackState, "red", 1);
 
-		expect(trackState.runners.red.below).toBe(trackState.runners.yellow);
-		expect(trackState.runners.yellow.above).toBe(trackState.runners.red);
+		expect(trackState.runners.get("red")?.below).toBe(
+			trackState.runners.get("yellow"),
+		);
+		expect(trackState.runners.get("yellow")?.above).toBe(
+			trackState.runners.get("red"),
+		);
 
-		expect(trackState.runners.red.bottom).toBe(trackState.tracks[2]);
-		expect(trackState.tracks[2].top).toBe(trackState.runners.red);
+		expect(trackState.runners.get("red")?.bottom).toBe(trackState.tracks[2]);
+		expect(trackState.tracks[2].top).toBe(trackState.runners.get("red"));
 	});
 
 	it("moves the runners above the designated runner along with it.", () => {
@@ -136,13 +148,17 @@ describe("move", () => {
 
 		move(trackState, "green", 2);
 
-		expect(trackState.runners.blue.above).toBeUndefined();
+		expect(trackState.runners.get("blue")?.above).toBeUndefined();
 
-		expect(trackState.runners.green.below).toBe(trackState.runners.purple);
-		expect(trackState.runners.purple.above).toBe(trackState.runners.green);
+		expect(trackState.runners.get("green")?.below).toBe(
+			trackState.runners.get("purple"),
+		);
+		expect(trackState.runners.get("purple")?.above).toBe(
+			trackState.runners.get("green"),
+		);
 
-		expect(trackState.tracks[4].top).toBe(trackState.runners.yellow);
-		expect(trackState.runners.yellow.bottom).toBe(trackState.tracks[4]);
+		expect(trackState.tracks[4].top).toBe(trackState.runners.get("yellow"));
+		expect(trackState.runners.get("yellow")?.bottom).toBe(trackState.tracks[4]);
 	});
 
 	it("(with `toTheBottom` flag) puts the runner and runners above it to the bottom of the destination", () => {
@@ -156,16 +172,20 @@ describe("move", () => {
 
 		move(trackState, "green", 2, { toTheBottom: true });
 
-		expect(trackState.runners.blue.above).toBeUndefined();
+		expect(trackState.runners.get("blue")?.above).toBeUndefined();
 
-		expect(trackState.runners.green.below).toBe(trackState.tracks[4]);
-		expect(trackState.tracks[4].above).toBe(trackState.runners.green);
+		expect(trackState.runners.get("green")?.below).toBe(trackState.tracks[4]);
+		expect(trackState.tracks[4].above).toBe(trackState.runners.get("green"));
 
-		expect(trackState.runners.yellow.above).toBe(trackState.runners.purple);
-		expect(trackState.runners.purple.below).toBe(trackState.runners.yellow);
+		expect(trackState.runners.get("yellow")?.above).toBe(
+			trackState.runners.get("purple"),
+		);
+		expect(trackState.runners.get("purple")?.below).toBe(
+			trackState.runners.get("yellow"),
+		);
 
-		expect(trackState.tracks[4].top).toBe(trackState.runners.purple);
-		expect(trackState.runners.purple.bottom).toBe(trackState.tracks[4]);
+		expect(trackState.tracks[4].top).toBe(trackState.runners.get("purple"));
+		expect(trackState.runners.get("purple")?.bottom).toBe(trackState.tracks[4]);
 	});
 
 	it("appends the tracks array if the destination should be latter than the last track", () => {
@@ -177,7 +197,7 @@ describe("move", () => {
 		expect(trackState.tracks[1].above).toBeUndefined();
 		expect(trackState.tracks[2].above).toBeUndefined();
 		expect(trackState.tracks[3].above).toBeUndefined();
-		expect(trackState.tracks[4].above).toBe(trackState.runners.red);
+		expect(trackState.tracks[4].above).toBe(trackState.runners.get("red"));
 	});
 
 	it("throws an error if the destination should be former than the first track", () => {
